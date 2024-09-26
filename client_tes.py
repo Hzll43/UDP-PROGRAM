@@ -7,12 +7,13 @@ server_port = 8080
 # Create a TCP/IP socket
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+while True:
 # Connect to the server
 client_socket.connect((server_ip, server_port))
 print(f"Connected to server at {server_ip}:{server_port}")
 
 # Send a message to the server
-client_socket.send(b"Hello from client!")
+client_socket.send(b"Start the Robot!")
 
 # Receive response from the server
 response = client_socket.recv(1024).decode('utf-8')
