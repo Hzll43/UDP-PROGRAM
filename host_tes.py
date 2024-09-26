@@ -20,7 +20,9 @@ server_port = 8080    #adjust the port of the host and client
         # Receive data from client
         data = client_socket.recv(1024).decode('utf-8')
         print(f"Received from client: {data}")
-    
-        client_socket.send(b"Hello from server!")  # Send a response back to the client
-    
-        client_socket.close()     # Close the client socket
+        
+        # Send a response back to the client
+        client_socket.send(b"Hello from server!") 
+        
+        # Close the client socket
+        client_socket.close()    
