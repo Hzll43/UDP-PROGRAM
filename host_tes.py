@@ -1,28 +1,23 @@
 import socket
 
-server_ip = '0.0.0.0'  # Server IP address (set to '0.0.0.0' to accept connections from any IP)
-server_port = 8080    #adjust the port of the host and client
+def udp_server():
+    server_ip = "0.0.0.0"  # Menerima dari semua antarmuka jaringan
+    server_port = 8080    # Port yang digunakan oleh server
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # Create a TCP/IP socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-
     sock.bind((server_ip, server_port))
 
-    sock.listen(5)   # Start listening for incoming connections 
-    print(f"Server listening on {server_ip}:{server_port}...")
+    print(f"Server UDP berjalan di {server_ip}:{server_port}...")
 
-    while True:
-        # Wait for a connection
-        client_socket, client_address = sock.accept()
-        print(f"Connection established with {client_address}")
+    try:
+        while True:
+            data, addr = sock.recvfrom(1024)  # Menerima data dari klien
+            print(f"Message from {addr}: {data.decode('utf-8')}")
+    except KeyboardInterrupt:
+        print("Server stopped.")
+    finally:
+        sock.close()
 
-        # Receive data from client
-        data = client_socket.recv(1024).decode('utf-8')
-        print(f"Received from client: {data}")
-        
-        # Send a response back to the client
-        client_socket.send(b"Hello from server!") 
-        
-        # Close the client socket
-        client_socket.close()    
+if __name__ == "__main__":
+    udp_server()
