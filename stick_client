@@ -1,0 +1,52 @@
+import pygame
+import socket
+import sys
+
+SERVER_IP = "127.0.0.1" #change to ip of server
+SERVER_PORT = 8080 #make this same with host
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+pygame.init()
+pygame.joystick.init()
+
+if pygame.joystick.get_count() == 0:
+    print("No joystick connected.")
+    sys.exit()
+
+joystick = pygame.joystick.Joystick(0)
+joystick.init()
+print(f"Joystick '{joystick.get_name()}' connected.")
+
+last_axis_values = [0.0] * joystick.get_numaxes()
+last_hat_value = (0, 0)
+
+try:
+    while True:
+        pygame.event.pump()  
+        for i in range(joystick.get_numaxes()):
+            axis_value = joystick.get_axis(i)
+            if abs(axis_value - last_axis_values[i]) > 0.01:  # Threshold for change
+                message = f"Axis {i} value: {axis_value:.3f}"
+                print(message)
+                sock.sendto(message.encode('utf-8'), (SERVER_IP, SERVER_PORT))
+                last_axis_values[i] = axis_value  
+
+        for i in range(joystick.get_numbuttons()):
+            if joystick.get_button(i):
+                message = f"Button {i} pressed."
+                print(message)
+                sock.sendto(message.encode('utf-8'), (SERVER_IP, SERVER_PORT))
+
+        hat_value = joystick.get_hat(0)
+        if hat_value != last_hat_value:
+            message = f"D-pad value: {hat_value}"
+            print(message)
+            sock.sendto(message.encode('utf-8'), (SERVER_IP, SERVER_PORT))
+            last_hat_value = hat_value  # Update last D-pad value
+
+except KeyboardInterrupt:
+    print("Exiting program...")
+
+finally:
+    sock.close()
+    pygame.quit()
