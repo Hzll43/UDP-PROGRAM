@@ -1,23 +1,26 @@
 import socket
 
-# Server's IP address and port
-server_ip = '192.168.99.150'  # Replace with the server's IP address
-server_port = 8080
+def udp_client():
+    server_ip = "127.0.0.1"  # Alamat IP server (sesuaikan dengan alamat server)
+    server_port = 12345      # Port server yang sesuai dengan yang digunakan oleh server
 
-# Create a TCP/IP socket
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-while True:
-# Connect to the server
-client_socket.connect((server_ip, server_port))
-print(f"Connected to server at {server_ip}:{server_port}")
+    print(f"Menghubungkan ke server UDP di {server_ip}:{server_port}...")
 
-# Send a message to the server
-client_socket.send(b"Start the Robot!")
+    while True:
+        message = input("Masukkan pesan (ketik 'STOP' untuk berhenti): ")
 
-# Receive response from the server
-response = client_socket.recv(1024).decode('utf-8')
-print(f"Received from server: {response}")
+        sock.sendto(message.encode('utf-8'), (server_ip, server_port))
 
-# Close the client socket
-client_socket.close()
+        if message.strip().upper() == "STOP":
+            print("Menghentikan client...")
+            break
+
+        data, addr = sock.recvfrom(1024)
+        print(f"Pesan dari server: {data.decode('utf-8')}")
+
+    sock.close()
+
+if __name__ == "__main__":
+    udp_client()
