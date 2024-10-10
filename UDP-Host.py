@@ -1,23 +1,25 @@
 import socket
 
-def udp_server():
-    server_ip = "0.0.0.0"  # Menerima dari semua antarmuka jaringan
-    server_port = 8080    # Port yang digunakan oleh server
+def udp_receiver():
+    server_ip = "0.0.0.0"  # Accept data from any network interface
+    server_port = 8080      # Port to listen on
 
+    # Create UDP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind((server_ip, server_port))
 
-    print(f"Server UDP berjalan di {server_ip}:{server_port}...")
+    print(f"UDP receiver running on {server_ip}:{server_port}...")
 
     try:
         while True:
-            data, addr = sock.recvfrom(1024)  # Menerima data dari klien
-            print(f"Message from {addr}: {data.decode('utf-8')}")
+            # Receive data from any client (buffer size is 1024 bytes)
+            data, addr = sock.recvfrom(1024)  
+            print(f"Received message from {addr}: {data.decode('utf-8')}")
     except KeyboardInterrupt:
-        print("Server stopped.")
+        print("Receiver stopped.")
     finally:
         sock.close()
 
-if __name__ == "__main__":
-    udp_server()
+if _name_ == "_main_":
+    udp_receiver()
