@@ -1,52 +1,74 @@
 import pygame
 import socket
 import sys
+import time
 
-SERVER_IP = "127.0.0.1" #change to ip of server
-SERVER_PORT = 8080 #make this same with host
+def baca_controller(joystick, last_axis_values, last_hat_value):
+    pygame.event.pump()
+    axis_values = [joystick.get_axis(n) * 255 for n in (0, 1)]
+    axis_values = [0 if abs(val) < 20 else val for val in axis_values]
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-pygame.init()
-pygame.joystick.init()
+    axis_changed = any(abs(axis_values[n] - last_axis_values[n]) > 5 for n in (0, 1))
+    button_presses = [i for i in range(joystick.get_numbuttons()) if joystick.get_button(i)]
+    hat_value = joystick.get_hat(0)
+    hat_changed = hat_value != last_hat_value
 
-if pygame.joystick.get_count() == 0:
-    print("No joystick connected.")
-    sys.exit()
+    return axis_values, axis_changed, button_presses, hat_value, hat_changed
 
-joystick = pygame.joystick.Joystick(0)
-joystick.init()
-print(f"Joystick '{joystick.get_name()}' connected.")
+def kirim_udp(sock, server_ip, server_port, message):
+    print(f"Sending message: {message}")
+    sock.sendto(message.encode('utf-8'), (server_ip, server_port))
 
-last_axis_values = [0.0] * joystick.get_numaxes()
-last_hat_value = (0, 0)
+def main():
+    SERVER_IP = "192.168.217.235"  
+    SERVER_PORT = 8080  
 
-try:
-    while True:
-        pygame.event.pump()  
-        for i in range(joystick.get_numaxes()):
-            axis_value = joystick.get_axis(i)
-            if abs(axis_value - last_axis_values[i]) > 0.01:  # Threshold for change
-                message = f"Axis {i} value: {axis_value:.3f}"
-                print(message)
-                sock.sendto(message.encode('utf-8'), (SERVER_IP, SERVER_PORT))
-                last_axis_values[i] = axis_value  
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    pygame.init()
+    pygame.joystick.init()
 
-        for i in range(joystick.get_numbuttons()):
-            if joystick.get_button(i):
-                message = f"Button {i} pressed."
-                print(message)
-                sock.sendto(message.encode('utf-8'), (SERVER_IP, SERVER_PORT))
+    if pygame.joystick.get_count() == 0:
+        print("No joystick connected.")
+        sys.exit()
 
-        hat_value = joystick.get_hat(0)
-        if hat_value != last_hat_value:
-            message = f"D-pad value: {hat_value}"
-            print(message)
-            sock.sendto(message.encode('utf-8'), (SERVER_IP, SERVER_PORT))
-            last_hat_value = hat_value  # Update last D-pad value
+    joystick = pygame.joystick.Joystick(0)
+    joystick.init()
+    print(f"Joystick '{joystick.get_name()}' connected.")
 
-except KeyboardInterrupt:
-    print("Exiting program...")
+    last_axis_values = [0.0] * joystick.get_numaxes()
+    last_hat_value = (0, 0)
+    last_sent_time = 0
+    send_interval = 0.01  
 
-finally:
-    sock.close()
-    pygame.quit()
+    try:
+        while True:
+            current_time = time.time()
+
+            if current_time - last_sent_time >= send_interval:
+                axis_values, axis_changed, button_presses, hat_value, hat_changed = baca_controller(joystick, last_axis_values, last_hat_value)
+
+                if axis_changed:
+                    message = f"Axis 0 value: {axis_values[0]:.3f}; Axis 1 value: {axis_values[1]:.3f}"
+                    kirim_udp(sock, SERVER_IP, SERVER_PORT, message)
+                    last_axis_values = axis_values
+
+                for button in button_presses:
+                    message = f"Button {button} pressed."
+                    kirim_udp(sock, SERVER_IP, SERVER_PORT, message)
+
+                if hat_changed:
+                    message = f"D-pad value: {hat_value}"
+                    kirim_udp(sock, SERVER_IP, SERVER_PORT, message)
+                    last_hat_value = hat_value
+
+                last_sent_time = current_time
+
+    except KeyboardInterrupt:
+        print("Exiting program...")
+
+    finally:
+        sock.close()
+        pygame.quit()
+
+if __name__ == "__main__":
+    main()
